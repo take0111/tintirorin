@@ -14,22 +14,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-
-import static org.bukkit.Bukkit.getServer;
-import static org.bukkit.Bukkit.savePlayers;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class Tintirorin extends JavaPlugin implements Listener {
     VaultManager vault;
     public static JavaPlugin plugin;
     static String prefix = "§7[§c§lチンチロ§r§7]§r ";
     static List<Player> sankasya = new ArrayList<>();
+    static List<Player> ko = new ArrayList<>();
+    static Player oya;
     double bet;
     int num;
-    static int cnt = 0;
-    int[] dice = {0, 0, 0};
+    static int cnt;
     String parent;
     boolean game = false;
-    int result;
+    String result;
+
+    int parentResult = 0;
+    int childrenResult = 0;
 
     public void onEnable() {
         // Plugin startup logic
@@ -53,10 +55,9 @@ public final class Tintirorin extends JavaPlugin implements Listener {
                         return true;
                     }
                     if (!sankasya.contains(p)) {
-                        sender.sendMessage(prefix + "§d§l開催中のゲームにエントリーしました");
                         sankasya.add((Player) sender);
-                    }else {
-                        sender.sendMessage(prefix + "§c§l既に参加済みです");
+                        ko.add((Player) sender);
+                        sender.sendMessage(prefix + "§d§l開催中のゲームにエントリーしました");
                     }
                 }
             }
@@ -108,7 +109,14 @@ public final class Tintirorin extends JavaPlugin implements Listener {
             }
         }, 180);
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            gamePush(p);
+            if (!ko.isEmpty()) {
+                gamePushParent();
+            } else {
+                getServer().broadcastMessage(prefix + "§c参加者が集まりませんでした");
+                sankasya.clear();
+                ko.clear();
+                game = false;
+            }
         }, 200);
     }
 
@@ -121,55 +129,98 @@ public final class Tintirorin extends JavaPlugin implements Listener {
         timer(p);
     }
 
-    public void gamePush(Player p) {
-        int late = 50;
+    public void gamePushParent() {
         Bukkit.broadcastMessage(prefix + "§a§lチンチロリンがスタートしました!");
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             sendSankasya("§3§l" + parent + "§f§lさん§9§l(親)§f§lがサイコロを振っています...§e§l§kOwO");
-        }, 20);
-        for (int i = 0; i < 3; i++) {
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                result = judgement(dice);
-                switch (result) {
-                    case 111:
-                       sendSankasya("ピンゾロ");
-                       break;
-                    case 333:
-                        sendSankasya("ゾロ目");
-                        break;
-                    case 456:
-                        sendSankasya("シゴロ");
-                        break;
-                    case 123:
-                        sendSankasya("sakime");
-                        break;
-                    case 6:
-                        sendSankasya("6の目");
-                        break;
-                    case 5:
-                        sendSankasya("5の目");
-                        break;
-                    case 4:
-                        sendSankasya("4の目");
-                        break;
-                    case 3:
-                        sendSankasya("3の目");
-                        break;
-                    case 2:
-                        sendSankasya("2の目");
-                        break;
-                    case 1:
-                        sendSankasya("1の目");
-                        break;
-                    default:
-                        sendSankasya("目無し");
+        }, 30);
+        cnt = 0;
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            result = judgement(diceRoll());
+            if (!result.equals("目無し")) {
+                sendSankasya("§9§l親§f§lの役は" + result + "§f§lです");
+                gamePushKo(ko.get(0));
+                cnt = 10;
+            }
+        }, 60);
+        cnt++;
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (cnt < 3) {
+                result = judgement(diceRoll());
+                if (!result.equals("目無し")) {
+                    sendSankasya("§9§l親§f§lの役は" + result + "§f§lです");
+                    gamePushKo(ko.get(0));
+                    cnt = 10;
                 }
-            }, late);
-            late += 30;
-        }
+            }
+        }, 100);
+        cnt++;
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (cnt < 3) {
+                result = judgement(diceRoll());
+                sendSankasya("§9§l親§f§lの役は" + result + "§f§lです");
+                gamePushKo(ko.get(0));
+            }
+        }, 140);
     }
 
-    public static int judgement(int[] dice) {
+    public void gamePushKo(Player children) {
+        AtomicBoolean humu = new AtomicBoolean(false);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            sendSankasya("§3§l" + children.getName() + "§f§lさん§7§l(子)§f§lがサイコロを振っています...§e§l§kOwO");
+        }, 20);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            result = judgement(diceRoll());
+            if (!result.equals("目無し")) {
+                humu.set(true);
+                cnt = 0;
+                ko.remove(children);
+                sendSankasya("§7§l子§f§lの役は" + result + "§f§lです！");
+                if (!ko.isEmpty()) {
+                    gamePushKo(ko.get(0));
+                } else {
+                    sendSankasya("ゲームが終了しました");
+                    game = false;
+                    sankasya.clear();
+                }
+            }
+        }, 50);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            result = judgement(diceRoll());
+            if (humu.equals(false)) {
+                cnt = 0;
+                ko.remove(children);
+                sendSankasya("§7§l子§f§lの役は" + result + "§f§lです！");
+                if (!ko.isEmpty()) {
+                    gamePushKo(ko.get(0));
+                } else {
+                    sendSankasya("ゲームが終了しました");
+                    game = false;
+                    sankasya.clear();
+                }
+            }
+        }, 80);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (humu.equals(false)) {
+                result = judgement(diceRoll());
+                sendSankasya("§7§l子§f§lの役は" + result + "§f§lです！");
+                cnt = 0;
+                ko.remove(children);
+                if (!ko.isEmpty()) {
+                    gamePushKo(ko.get(0));
+                } else {
+                    sendSankasya("ゲームが終了しました");
+                    game = false;
+                    sankasya.clear();
+                }
+            } else {
+                sendSankasya("§7§l子§f§lの役は" + result + "§f§lです！");
+            }
+        }, 120);
+    }
+
+    public int[] diceRoll(){
+        int dice[] = {0,0,0};
         Random rand = new Random();
         for (int j = 0; j < 3; j++) {
             dice[j] = rand.nextInt(6) + 1;
@@ -177,29 +228,32 @@ public final class Tintirorin extends JavaPlugin implements Listener {
         cnt++;
         sendSankasya("§f§l" + cnt + "回目§e§l " + dice[0] + "§f§l,§e§l" + dice[1] + "§f§l,§e§l" + dice[2] + "§r");
         Arrays.sort(dice);
-
-        if (dice[0] == dice[2]) {
-            if (dice[0] == 1) {
-                return 111;
-            }
-            return 333;
-        }
-        if (dice[0] == dice[1]) {
-            return dice[2];
-        }
-        if (dice[1] == dice[2]) {
-            return dice[0];
-        }
-        if (dice[0] == 4 && dice[1] == 5 && dice[2] == 6) {
-            return 456;
-        }
-        if (dice[0] == 1 && dice[1] == 2 && dice[2] == 3) {
-            return 123;
-        }
-        return 0;
+        return dice;
     }
 
-    public static void sendSankasya(String message){
+    public String judgement(int[] dice) {
+        if (dice[0] == dice[2]) {
+            if (dice[0] == 1) {
+                return "§c§lピンゾロ";
+            }
+            return "§9§lゾロ目";
+        }
+        if (dice[0] == dice[1]) {
+            return "§e§l" + dice[2] + "§e§lの目";
+        }
+        if (dice[1] == dice[2]) {
+            return "§e§l" + dice[0] + "§e§lの目";
+        }
+        if (dice[0] == 4 && dice[1] == 5 && dice[2] == 6) {
+            return "§5§lシゴロ";
+        }
+        if (dice[0] == 1 && dice[1] == 2 && dice[2] == 3) {
+            return "§c§lヒフミ";
+        }
+        return "目無し";
+    }
+
+    public void sendSankasya(String message){
         for(Player p : sankasya){
             p.sendMessage(prefix + message);
         }
