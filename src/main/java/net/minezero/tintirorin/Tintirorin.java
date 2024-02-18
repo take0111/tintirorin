@@ -23,7 +23,6 @@ public final class Tintirorin extends JavaPlugin implements Listener {
     static List<Player> children = new ArrayList<>();
     Player parent;
     int parentMultiplier;
-    int childMultiplier;
     double bet;
     int num;
     boolean power = true;
@@ -150,7 +149,6 @@ public final class Tintirorin extends JavaPlugin implements Listener {
                         bet = Double.parseDouble(args[1]);
                         num = Integer.parseInt(args[2]);
                         parentMultiplier = num * 10;
-                        childMultiplier = 10;
                         vault.withdraw(p,bet * parentMultiplier);
                         gameStart(bet,num);
                     }
@@ -456,14 +454,12 @@ public final class Tintirorin extends JavaPlugin implements Listener {
             if (parentResult > childrenResult) {
                 sendMessage("§e§l結果§f§l: §c§l親§f§lの勝利!");
                 parentMultiplier++;
-                childMultiplier--;
                 vault.deposit(child,bet * 9);
                 child.sendMessage(prefix + "§f§lこのゲームの収支は§e§l" + vault.getJpyBal(-bet) + "円です");
             }
             if (parentResult < childrenResult) {
                 sendMessage("§e§l結果§f§l: §b§l子§f§lの勝利!");
                 parentMultiplier--;
-                childMultiplier++;
                 vault.deposit(child,bet * 11);
                 child.sendMessage(prefix + "§f§lこのゲームの収支は§e§l" + vault.getJpyBal(bet) + "円です");
             }
@@ -477,12 +473,10 @@ public final class Tintirorin extends JavaPlugin implements Listener {
             if (parentResult == 50 && childrenResult == -20) {
                 sendMessage("§e§l結果§f§l: " + "§c§l親§f§lの勝利! 倍率: §4§l10倍!");
                 parentMultiplier += 10;
-                childMultiplier -= 10;
                 child.sendMessage(prefix + "§f§lこのゲームの収支は§e§l" + vault.getJpyBal(bet * -10) + "円です");
             } else if (parentResult == -20 && childrenResult == 50) {
                 sendMessage("§e§l結果§f§l: " + "§b§l子§f§lの勝利! 倍率: §4§l10倍!");
                 parentMultiplier -= 10;
-                childMultiplier += 10;
                 vault.deposit(child,bet * 20);
                 child.sendMessage(prefix + "§f§lこのゲームの収支は§e§l" + vault.getJpyBal(bet * 10) + "円です");
             } else if (parentResult > childrenResult) {
@@ -521,7 +515,6 @@ public final class Tintirorin extends JavaPlugin implements Listener {
             game = false;
             sankasya.clear();
             children.clear();
-            parentTurn = false;
             childrenTurn = false;
             parentResult = 0;
             childrenResult = 0;
@@ -534,7 +527,6 @@ public final class Tintirorin extends JavaPlugin implements Listener {
             p.sendMessage(prefix + message);
         }
     }
-
 
 }
 
