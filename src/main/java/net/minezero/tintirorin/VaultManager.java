@@ -170,4 +170,51 @@ public class VaultManager {
         }
         return false;
     }
+
+    public String getJpyBal(double amount) {
+        long money = (long) amount;
+
+        if (money < 10000){
+            return String.valueOf(money);
+        }
+
+        if (money < 100000000){
+
+            long man = (long) (money/10000);
+            String left = String.valueOf(money).substring(String.valueOf(money).length()-4);
+//            String.valueOf(money).substring(0, String.valueOf(money).indexOf(".")).length()
+            if (Long.parseLong(left) == 0){
+                return man + "万";
+            }
+
+            return man + "万" + Long.parseLong(left);
+        }
+
+        if (money < 100000000000L){
+
+            long oku = (long) (money/100000000);
+            String man = String.valueOf(money).substring(String.valueOf(money).length() -8);
+            String te = man.substring(0, 4);
+            String left = String.valueOf(money).substring(String.valueOf(money).length() -4);
+
+            if (Long.parseLong(te)  == 0){
+
+                if (Long.parseLong(left) == 0){
+                    return oku + "億";
+                } else {
+                    return oku + "億"+ Long.parseLong(left);
+                }
+
+            } else {
+
+                if (Long.parseLong(left) == 0){
+                    return oku + "億" + Long.parseLong(te) + "万";
+                }
+            }
+
+            return oku + "億" + Long.parseLong(te) + "万" + Long.parseLong(left);
+        }
+
+        return "null";
+    }
 }
