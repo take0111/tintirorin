@@ -19,22 +19,22 @@ public final class Tintirorin extends JavaPlugin implements Listener {
     VaultManager vault;
     public static JavaPlugin plugin;
     static String prefix = "§f[§cMZC§f]§r ";
-    static List<Player> sankasya = new ArrayList<>();
+    static List<Player> list = new ArrayList<>();
     static List<Player> children = new ArrayList<>();
-    Player parent;
-    int parentMultiplier;
-    double bet;
-    int num;
     boolean power = true;
     boolean recruit = false;
     boolean game = false;
     boolean parentTurn = false;
     boolean childrenTurn = false;
+    boolean multiplier = false;
+    Player parent;
+    int parentMultiplier;
+    double bet;
+    int num;
     int parentResult = 0;
     int childrenResult = 0;
     int[][] parentDice = { {0,0,0} , {0,0,0} , {0,0,0} };
     int[][] childrenDice = { {0,0,0} , {0,0,0} , {0,0,0} };
-    boolean multiplier = false;
 
     public void onEnable() {
         // Plugin startup logic
@@ -80,9 +80,9 @@ public final class Tintirorin extends JavaPlugin implements Listener {
                         sender.sendMessage(prefix + "§c§l現在募集中のゲームは存在しません");
                         return false;
                     }
-                    if (!sankasya.contains(p)) {
+                    if (!list.contains(p)) {
                         sender.sendMessage(prefix + "§d§l募集中のゲームに参加しました");
-                        sankasya.add((Player) sender);
+                        list.add((Player) sender);
                         children.add((Player) sender);
                         vault.withdraw(p,bet * 10);
                     } else {
@@ -145,7 +145,7 @@ public final class Tintirorin extends JavaPlugin implements Listener {
                 if (args[0].equals("new")) {
                     if (!game && !recruit && power) {
                         parent = p;
-                        sankasya.add(p);
+                        list.add(p);
                         bet = Double.parseDouble(args[1]);
                         num = Integer.parseInt(args[2]);
                         parentMultiplier = num * 10;
@@ -169,31 +169,31 @@ public final class Tintirorin extends JavaPlugin implements Listener {
     private void timer() {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             getServer().broadcastMessage(prefix + "§7開始まで5秒");
-            for (Player j : sankasya) {
+            for (Player j : list) {
                 j.playSound(j, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f);
             }
         }, 100);
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             getServer().broadcastMessage(prefix + "§7開始まで4秒");
-            for (Player j : sankasya) {
+            for (Player j : list) {
                 j.playSound(j, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f);
             }
         }, 120);
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             getServer().broadcastMessage(prefix + "§7開始まで3秒");
-            for (Player j : sankasya) {
+            for (Player j : list) {
                 j.playSound(j, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f);
             }
         }, 140);
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             getServer().broadcastMessage(prefix + "§7開始まで2秒");
-            for (Player j : sankasya) {
+            for (Player j : list) {
                 j.playSound(j, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f);
             }
         }, 160);
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             getServer().broadcastMessage(prefix + "§7開始まで1秒");
-            for (Player j : sankasya) {
+            for (Player j : list) {
                 j.playSound(j, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f);
             }
         }, 180);
@@ -203,7 +203,7 @@ public final class Tintirorin extends JavaPlugin implements Listener {
             } else {
                 getServer().broadcastMessage(prefix + "§c参加者が集まりませんでした");
                 vault.withdraw(parent,bet * 30);
-                sankasya.clear();
+                list.clear();
                 children.clear();
                 recruit = false;
             }
@@ -513,7 +513,7 @@ public final class Tintirorin extends JavaPlugin implements Listener {
             sendMessage("§a§lゲームが終了しました");
             parent.sendMessage(prefix + "§f§lこのゲームの収支は§e§l" + vault.getJpyBal( bet * (parentMultiplier - 10 * num) ) + "円です");
             game = false;
-            sankasya.clear();
+            list.clear();
             children.clear();
             childrenTurn = false;
             parentResult = 0;
@@ -523,7 +523,7 @@ public final class Tintirorin extends JavaPlugin implements Listener {
     }
 
     public void sendMessage(String message){
-        for(Player p : sankasya){
+        for(Player p : list){
             p.sendMessage(prefix + message);
         }
     }
